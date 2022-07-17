@@ -2,7 +2,7 @@
 ## About game
 The essence of the game is to shoot down enemy aircraft trying to bomb the city with a laser. To win, it is enough to save at least one building by the end of the 10th day. The player can buy upgrades with earned points. Points are awarded for the successful shooting down of aircraft. There are also fines.
 You can get a rough idea of the gameplay by looking in the screenshots folder.
-To start the game, just run the exe file.
+To start the game, just run the .exe file.
 
 <img src="screenshots/Screenshot_2.png" width=800>
 
