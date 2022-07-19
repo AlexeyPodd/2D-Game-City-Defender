@@ -26,6 +26,9 @@ GREEN = (124, 252, 0)
 
 
 class Menu(pygame.Surface):
+    """Class representing the menu - a sidebar with game information
+     and buttons for buying upgrades"""
+
     def __init__(self, size, menu_dislocation, score, game):
         self.game = game
 
@@ -118,6 +121,9 @@ class Menu(pygame.Surface):
 
 
 class MenuInfoSlot(pygame.Surface):
+    """Class representing the part of the menu that displays
+     game information - score, day number, and time"""
+
     def __init__(self, size, score, level_number):
         super().__init__(size)
         self.__size = size
@@ -167,6 +173,8 @@ class MenuInfoSlot(pygame.Surface):
 
 
 class MenuButton(pygame.sprite.Sprite):
+    """Class representing the upgrade purchase button"""
+
     w, h = 210, 50
     statuses = []
 
@@ -264,6 +272,10 @@ class MenuButton(pygame.sprite.Sprite):
 
 
 class ButtonIndicator(pygame.sprite.Sprite):
+    """Class representing an upgrade status indicator - purchased,
+     available for purchase (in this case, the price is displayed),
+      or not available."""
+
     w, h = MenuButton.w // 2 + 40, MenuButton.h
     font = 'arial'
     font_size = 28
@@ -299,6 +311,8 @@ class ButtonIndicator(pygame.sprite.Sprite):
 
 
 class GamePlace(pygame.Surface):
+    """Class representing the game area where all actions are displayed"""
+
     def update(self, level):
         self.fill(bg_color)
 
@@ -330,6 +344,8 @@ class GamePlace(pygame.Surface):
 
 
 class EnergyBar(pygame.Surface):
+    """Class representing any charge bar"""
+
     def __init__(self, width, height, color, value, top_value):
         self.width = width
         self.height = height
@@ -349,6 +365,8 @@ class EnergyBar(pygame.Surface):
 
 
 class Button(pygame.sprite.Sprite):
+    """Class representing buttons on the screen in transitions between game levels"""
+
     size = (400, 100)
     font = 'arial'
     font_size = 36
@@ -394,6 +412,9 @@ class Button(pygame.sprite.Sprite):
 
 
 class Aim(pygame.sprite.Sprite):
+    """Class representing a sight - the main element with which the player interacts with the game.
+    An instance of this class deals damage and draws a laser when fired."""
+
     homing_sight_bought = False
     night_vision_bought = False
     target_recognition_bought = False
@@ -508,6 +529,11 @@ class Aim(pygame.sprite.Sprite):
         self.rect.center = self.pos
 
     def steer(self):
+        """The homing of the sight in the homing mode occurs in a fixed time in three stages.
+        This method calculates what stage the process is in at the current time
+        and calls the appropriate homing draw method.
+        The homing is considered completed and the shot is allowed only at the onset of the 3rd stage."""
+
         if self.homing_target and self.rect.colliderect(self.homing_target.rect) and not self.homing_target.exploded:
             self.laser_point = self.homing_target.rect.clip(self.rect).center
             self.image_laser_point = (self.laser_point[0] - self.rect.x, self.laser_point[1] - self.rect.y)
@@ -551,10 +577,17 @@ class Aim(pygame.sprite.Sprite):
         self.image.set_colorkey(WHITE)
 
     def __draw_homing(self):
+        """This method draws completed homing sight in homing mode.
+        The place on the target where the shot will be delivered is marked with a small square."""
+
         self.__clear_aim()
         pygame.draw.rect(self.image, DARK_RED, (self.image_laser_point[0]-5, self.image_laser_point[1]-5, 10, 10), 1)
 
     def __draw_steering(self):
+        """This method calculates and draws not completed homing sight in homing mode.
+        Depending on the aiming stage, the lines converge closer and closer to the target
+        until the final aiming stage is reached."""
+
         self.__clear_aim()
         if self.homing_stage == 1:
             pygame.draw.line(self.image, DARK_RED,
@@ -688,6 +721,8 @@ class Aim(pygame.sprite.Sprite):
 
 
 class FlyingObject(pygame.sprite.Sprite):
+    """Parent class for all aircraft"""
+
     def __init__(self, start_pos, hp, speed, expl_rad, points, image, sizex, width, group, del_white=False):
         super().__init__()
 
@@ -765,6 +800,8 @@ class FlyingObject(pygame.sprite.Sprite):
 
 
 class Jet(FlyingObject):
+    """Class representing the most common enemy - enemy jets"""
+
     picture = 'images/jet.png'
 
     hp = 100
@@ -811,6 +848,8 @@ class Jet(FlyingObject):
         super().move()
 
     def _approach_to_target(self):
+        """Method for turning jet around if it is not yet ready to leave the city"""
+
         if self.indent is None:
             self.indent = rnd(self.min_indent, self.max_indent)
 
@@ -841,6 +880,8 @@ class Jet(FlyingObject):
         return x == 1
 
     def __bombard(self, city, dropped_bombs):
+        """Method for for selecting a target and dropping a bomb over it"""
+
         if self.house_to_bomb is None and self.bombs >= self.moves and len(city):
             self.house_to_bomb = choice([house for house in city])
         if self.house_to_bomb and self.house_to_bomb.rect.x+10 < self.rect.centerx < self.house_to_bomb.rect.right-10:
@@ -851,14 +892,6 @@ class Jet(FlyingObject):
         Bomb(self.rect.midbottom, target, self.bomb_dmg).add(group)
         self.bombs -= 1
 
-    def _shoot_rocket(self, target, group):
-        Rocket(start_pos=self.rect.center,
-               start_direction=self.direction,
-               target=target,
-               width=self.width,
-               ground_lvl=self.ground_lvl,
-               group=group)
-
     def catapult_pilot(self, group):
         Pilot(pos=self.rect.center, land_lvl=self.ground_lvl, w8_time=30).add(group)
 
@@ -868,6 +901,9 @@ class Jet(FlyingObject):
 
 
 class AllieJet(Jet):
+    """Class representing alie fighter.
+     It flies and fires missiles at randomly selected units of enemy aircraft at random times"""
+
     time_service = 10
     time_out = time() - time_service
 
@@ -909,18 +945,26 @@ class AllieJet(Jet):
         self.move()
 
     def __shoot_rockets(self, missiles, jets, helicopters):
+        """Method for shooting missiles in targets that not exploded and not chosen by other missiles"""
+
         targets = set(jets) | set(filter(lambda x: not x.alie, helicopters))
         not_exploded_targets = set(target for target in targets if not target.exploded)
         already_shoted_targets = set(missile.target for missile in missiles)
         free_targets = not_exploded_targets - already_shoted_targets
 
         if self.armed_missiles and len(free_targets):
-            target = choice([target for target in set(targets) - set(missile.target for missile in missiles)])
-            Rocket(self.rect.center, self.direction, target, self.width, self.ground_lvl, missiles)
+            target = choice(tuple(free_targets))
+            Rocket(start_pos=self.rect.center,
+                   start_direction=self.direction,
+                   target=target,
+                   width=self.width,
+                   ground_lvl=self.ground_lvl,
+                   group=missiles)
             self.armed_missiles -= 1
             self.rockets -= 1
 
     def __choose_place_to_shoot(self):
+        """Method for randomly choosing place-time to shoot"""
         shoot_place = []
         for i in range(self.rockets):
             move_to_shoot = rnd(1, self.moves)
@@ -929,6 +973,9 @@ class AllieJet(Jet):
         return shoot_place
 
     def __arm_missile(self):
+        """Method is setting missiles 'armed' for shooting it as soon as he saw the enemy,
+         because not in every moment of time there is an enemy visible."""
+
         if self.rockets:
             for i, data in enumerate(self.shoot_data):
                 move_n, x = data
@@ -959,6 +1006,11 @@ class AllieJet(Jet):
 
 
 class Helicopter(FlyingObject):
+    """Class represents helicopters.
+    Their goal is the evacuation of ejected pilots.
+    As soon as he is above the pilot, for whom he flew out, he sits down,
+    picks up the pilot, and flies away along the shortest trajectory."""
+
     hp = 50
     speed = 1
     expl_rad = 30
@@ -1051,6 +1103,8 @@ class Helicopter(FlyingObject):
 
 
 class Rocket(FlyingObject):
+    """Class representing missiles, launched by allied jet."""
+
     hp = 10
     speed = 5
     expl_rad = 25
@@ -1096,8 +1150,8 @@ class Rocket(FlyingObject):
         if self.exploded:
             self.explode()
 
-        self.rotate()
-        self.move()
+        self.__rotate()
+        self.__move()
 
     def blow_up(self):
         if self.armed and not self.exploded:
@@ -1105,7 +1159,7 @@ class Rocket(FlyingObject):
             self.kill()
             return self.target.get_damage(self.dmg)
 
-    def move(self):
+    def __move(self):
         if self.rect.bottom > self.ground_lvl:
             self.kill()
 
@@ -1115,7 +1169,7 @@ class Rocket(FlyingObject):
         self.rect.centerx = int(self.precision_pos_x)
         self.rect.centery = int(self.precision_pos_y)
 
-    def rotate(self):
+    def __rotate(self):
         if not self.exploded:
             self.__check_rotate_direction()
             self.__check_direction()
@@ -1153,6 +1207,8 @@ class Rocket(FlyingObject):
 
 
 class DroppedObject(pygame.sprite.Sprite):
+    """Parent class for bombs and catapulted pilots."""
+
     speed = 1
 
     def __init__(self, pos, size, image, land_lvl, hp, points):
@@ -1211,6 +1267,7 @@ class Bomb(DroppedObject):
         self.crash()
 
     def crash(self):
+        """Method is designed to run when the bomb is shoted down."""
         if self.hp == 0:
             if not self.crashed:
                 self.crashed = True
@@ -1219,6 +1276,8 @@ class Bomb(DroppedObject):
             self.kill()
 
     def blow_up(self):
+        """Method is designed to run when the bomb reaches the building."""
+
         if self.speed:
             self.speed = 0
         if not self.crashed:
@@ -1233,6 +1292,8 @@ class Bomb(DroppedObject):
             return 0
 
     def explode(self):
+        """Method for drawing explosion."""
+
         if self.expl_rad_now == 0:
             self.image = pygame.Surface((self.expl_rad * 2, self.expl_rad * 2))
             self.image.set_colorkey(BLACK)
@@ -1248,6 +1309,8 @@ class Bomb(DroppedObject):
 
 
 class Pilot(DroppedObject):
+    """Class representing ejected pilots."""
+
     size = (6, 8)
     picture = 'images/paratrooper.png'
     hp = 10
@@ -1306,6 +1369,7 @@ class Pilot(DroppedObject):
 
 
 class LandObject(pygame.sprite.Sprite):
+    """Parent class for Ground and Houses"""
     def __init__(self):
         super().__init__()
         self.dark = None
@@ -1372,6 +1436,9 @@ class House(LandObject):
         self.add(group)
 
     def get_damage(self, dmg):
+        """Method for accounting for received damage.
+        One or more blocks are removed, depending on the damage taken and the strength of the blocks."""
+
         res = 0
         self.damage += dmg
         while len(self.blocks) and self.damage >= self.blocks[0].strength:
@@ -1392,6 +1459,10 @@ class House(LandObject):
 
 
 class City(pygame.sprite.Group):
+    """Class representing city - group of houses.
+    It is built randomly by distributing blocks across buildings.
+    Keeps the original structure until the end of the game (plus takes damage)."""
+
     new_blocks = 180
     max_flours = 16
     pos_start = 100
@@ -1413,6 +1484,10 @@ class City(pygame.sprite.Group):
 
 
 class SpotLightSurf(pygame.Surface):
+    """Surface that is superimposed on the background to simulate twilight.
+    Spotlight sprites are located on it.
+    The more spotlights, the brighter the overall background."""
+
     def __init__(self, size, number, ground_lvl, how_dark):
         super().__init__(size)
 
@@ -1501,6 +1576,8 @@ class SpotLight(pygame.sprite.Sprite):
 
 
 class NightVisionSurface(pygame.Surface):
+    """The surface above the SpotLightSurf to display the night vision effect of the scope on it."""
+
     def __init__(self, size):
         super().__init__(size)
         self.set_colorkey(BLACK)

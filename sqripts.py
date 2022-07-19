@@ -3,6 +3,9 @@ from sys import exit
 
 
 class Game:
+    """Main class. Contains methods for playing levels and transition screens between them.
+     The instance contains the main parameters of the game - total score, purchased upgrades, level number, etc."""
+
     # Screen settings
     W, H = 1280, 720
     FPS = 60
@@ -217,6 +220,9 @@ class Game:
 
 
 class Level:
+    """Level class. The instance contains groups of sprites,
+     and the methods describe their interactions with the player and with each other."""
+
     background_music = {x: f'sounds/BackgroundMusic/{x}.mp3' for x in range(1, 11)}
     vol = 0.5
 
